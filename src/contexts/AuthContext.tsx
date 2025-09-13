@@ -36,10 +36,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check if user is logged in on app start
     const checkAuthStatus = async () => {
       try {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         if (token) {
           // Validate token with backend
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch('/api/auth/profile', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -47,14 +47,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           if (response.ok) {
             const userData = await response.json();
-            setUser(userData.user);
+            setUser(userData.data.user);
           } else {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
@@ -80,8 +80,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token);
-      setUser(data.user);
+      localStorage.setItem('token', data.data.token);
+      setUser(data.data.user);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -107,8 +107,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      localStorage.setItem('authToken', data.token);
-      setUser(data.user);
+      localStorage.setItem('token', data.data.token);
+      setUser(data.data.user);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       if (token) {
         await fetch('/api/auth/logout', {
@@ -131,12 +131,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
       
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear local state even if server request fails
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
