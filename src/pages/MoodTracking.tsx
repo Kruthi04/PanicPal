@@ -93,21 +93,7 @@ export default function MoodTracking() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="text-center">
-          <Link 
-            to="/breathing-session" 
-            className="forest-button font-inter font-semibold py-3 px-8 shadow-card mr-4"
-          >
-            Start Breathing Exercise
-          </Link>
-          <Link 
-            to="/mindfulness" 
-            className="bg-forest-bg-2/50 hover:bg-forest-card/50 text-forest-text-primary font-semibold py-3 px-8 rounded-2xl border-2 border-forest-bg-2 transition-colors backdrop-blur-sm font-inter"
-          >
-            Explore Mindfulness
-          </Link>
-        </div>
+
       </div>
     </div>
   );

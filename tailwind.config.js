@@ -24,9 +24,9 @@ export default {
         }
       },
       fontFamily: {
-        'inter': ['Inter', 'sans-serif'],
-        'poppins': ['Poppins', 'sans-serif'],
-        'dm-sans': ['DM Sans', 'sans-serif']
+        'inter': ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        'poppins': ['Poppins', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        'dm-sans': ['DM Sans', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif']
       },
       borderRadius: {
         'xl': '20px',
@@ -35,6 +35,15 @@ export default {
       boxShadow: {
         'soft': '0 4px 20px rgba(0, 0, 0, 0.1)',
         'card': '0 8px 32px rgba(0, 0, 0, 0.12)'
+      },
+      animation: {
+        'fade-in': 'fadeIn 1s ease-in-out'
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        }
       }
     },
   },

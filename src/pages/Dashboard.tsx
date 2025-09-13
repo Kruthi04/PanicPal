@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Volume2, Heart, Brain, BookOpen, Smile, Target, Shield } from 'lucide-react';
 import AudioPlayer from '../components/AudioPlayer';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserData {
   id: string;
