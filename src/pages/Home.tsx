@@ -1,13 +1,26 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Leaf, Heart, Brain, Shield, Moon, Headphones, Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import Navigation from "../components/Navigation";
 
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const handleNavigation = (path: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    navigate(path);
+  };
+
   const handlePanicButton = () => {
-    navigate('/breathing-session');
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    navigate('/breathing-session?rescue=true');
   };
   
   return (
@@ -23,7 +36,9 @@ export default function Home() {
               <h1 className="text-xl font-bold text-forest-text-primary font-poppins">PanicPal</h1>
             </div>
             
-            {!user && (
+            {user ? (
+              <Navigation />
+            ) : (
               <div className="flex items-center space-x-4">
                 <Link 
                   to="/login" 
@@ -76,6 +91,7 @@ export default function Home() {
                 >
                   Sign In
                 </Link>
+
               </div>
             </>
           )}
@@ -84,7 +100,7 @@ export default function Home() {
         {/* Features Grid */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
           <button 
-            onClick={() => navigate('/mood-tracking')}
+            onClick={() => handleNavigation('/mood-tracking')}
             className="forest-card p-6 text-center hover:bg-forest-card/80 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-forest-accent/30"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-forest-accent to-forest-mint rounded-full flex items-center justify-center mx-auto mb-4">
@@ -95,7 +111,7 @@ export default function Home() {
           </button>
 
           <button 
-            onClick={() => navigate('/mindfulness')}
+            onClick={() => handleNavigation('/mindfulness')}
             className="forest-card p-6 text-center hover:bg-forest-card/80 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-forest-accent/30"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-forest-accent to-forest-mint rounded-full flex items-center justify-center mx-auto mb-4">
@@ -106,7 +122,7 @@ export default function Home() {
           </button>
 
           <button 
-            onClick={() => navigate('/sleep-stories')}
+            onClick={() => handleNavigation('/sleep-stories')}
             className="forest-card p-6 text-center hover:bg-forest-card/80 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-forest-accent/30"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-forest-accent to-forest-mint rounded-full flex items-center justify-center mx-auto mb-4">
@@ -117,7 +133,7 @@ export default function Home() {
           </button>
 
           <button 
-            onClick={() => navigate('/guided-meditation')}
+            onClick={() => handleNavigation('/guided-meditation')}
             className="forest-card p-6 text-center hover:bg-forest-card/80 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-forest-accent/30"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-forest-accent to-forest-mint rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,7 +144,7 @@ export default function Home() {
           </button>
 
           <button 
-            onClick={() => navigate('/customize-session')}
+            onClick={() => handleNavigation('/customize-session')}
             className="forest-card p-6 text-center hover:bg-forest-card/80 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-forest-accent/30"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-forest-accent to-forest-mint rounded-full flex items-center justify-center mx-auto mb-4">

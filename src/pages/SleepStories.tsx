@@ -1,26 +1,33 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Moon, Play, Clock, Star, Volume2 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import Navigation from "../components/Navigation";
 
 export default function SleepStories() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-forest-bg-1">
       {/* Header */}
       <header className="bg-forest-bg-2/50 backdrop-blur-sm border-b border-forest-bg-2 shadow-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link 
-              to="/" 
-              className="flex items-center text-forest-text-secondary hover:text-forest-text-primary transition-colors mr-4"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Home
-            </Link>
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-forest-accent to-forest-seafoam rounded-full mr-3">
-                <Moon className="w-6 h-6 text-forest-bg-1" />
+              <Link 
+                to="/" 
+                className="flex items-center text-forest-text-secondary hover:text-forest-text-primary transition-colors mr-4"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Home
+              </Link>
+              <div className="flex items-center">
+                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-forest-accent to-forest-seafoam rounded-full mr-3">
+                  <Moon className="w-6 h-6 text-forest-bg-1" />
+                </div>
+                <h1 className="text-xl font-bold text-forest-text-primary font-poppins">Sleep Stories</h1>
               </div>
-              <h1 className="text-xl font-bold text-forest-text-primary font-poppins">Sleep Stories</h1>
             </div>
+            {user && <Navigation />}
           </div>
         </div>
       </header>

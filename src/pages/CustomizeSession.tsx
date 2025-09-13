@@ -1,7 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Settings, Clock, Volume2, Palette, Save, RotateCcw, Play } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSettings } from '../hooks/useSettings.tsx';
+import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import RainNoise from '../components/RainNoise';
 import OceanNoise from '../components/OceanNoise';
 import WhiteNoise from '../components/WhiteNoise';
@@ -10,7 +12,10 @@ import PinkNoise from '../components/PinkNoise';
 
 export default function CustomizeSession() {
   const { settings, updateSettings, saveSettings, resetSettings } = useSettings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
+  const audioComponents = useRef<{[key: string]: any}>({});
   
   // Local state for form inputs
   const [duration, setDuration] = useState(settings.duration);
@@ -54,6 +59,9 @@ export default function CustomizeSession() {
     updateSettings(newSettings);
     saveSettings();
     console.log('Settings saved:', newSettings);
+    
+    // Navigate to breathing session to start with the saved settings
+    navigate('/breathing-session');
   };
 
   const handleReset = () => {
@@ -66,20 +74,23 @@ export default function CustomizeSession() {
       {/* Header */}
       <header className="bg-forest-bg-2/50 backdrop-blur-sm border-b border-forest-bg-2 shadow-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link 
-              to="/" 
-              className="flex items-center text-forest-text-secondary hover:text-forest-text-primary transition-colors mr-4"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Home
-            </Link>
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-forest-accent to-forest-seafoam rounded-full mr-3">
-                <Settings className="w-6 h-6 text-forest-bg-1" />
+              <Link 
+                to="/" 
+                className="flex items-center text-forest-text-secondary hover:text-forest-text-primary transition-colors mr-4"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back to Home
+              </Link>
+              <div className="flex items-center">
+                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-forest-accent to-forest-seafoam rounded-full mr-3">
+                  <Settings className="w-6 h-6 text-forest-bg-1" />
+                </div>
+                <h1 className="text-xl font-bold text-forest-text-primary font-poppins">Customize Panic Session</h1>
               </div>
-              <h1 className="text-xl font-bold text-forest-text-primary font-poppins">Customize Panic Session</h1>
             </div>
+            {user && <Navigation />}
           </div>
         </div>
       </header>
@@ -246,8 +257,27 @@ export default function CustomizeSession() {
                           <button
                             onClick={() => {
                               if (isPlaying) {
+                                console.log(`Stopping ${noise.value} noise`);
                                 setPreviewPlaying(null);
                               } else {
+                                console.log(`Starting ${noise.value} noise`);
+                                // Stop all other audio before starting new one
+                                Object.entries(audioComponents.current).forEach(([key, component]) => {
+                                  if (key !== noise.value && component) {
+                                    // Call the specific stop method for each component type
+                                    if (key === 'rain' && component.stopRain) {
+                                      component.stopRain();
+                                    } else if (key === 'ocean' && component.stopOcean) {
+                                      component.stopOcean();
+                                    } else if (key === 'pink' && component.stopPinkNoise) {
+                                      component.stopPinkNoise();
+                                    } else if (key === 'white' && component.stopWhiteNoise) {
+                                      component.stopWhiteNoise();
+                                    } else if (key === 'brown' && component.stopBrownNoise) {
+                                      component.stopBrownNoise();
+                                    }
+                                  }
+                                });
                                 setPreviewPlaying(noise.value);
                               }
                             }}
@@ -270,6 +300,7 @@ export default function CustomizeSession() {
                                 isPlaying={true} 
                                 onPlayingChange={(playing) => !playing && setPreviewPlaying(null)}
                                 className="bg-forest-bg-2/50"
+                                ref={(ref) => { audioComponents.current.rain = ref; }}
                               />
                             )}
                             {noise.value === 'ocean' && (
@@ -277,6 +308,7 @@ export default function CustomizeSession() {
                                 isPlaying={true} 
                                 onPlayingChange={(playing) => !playing && setPreviewPlaying(null)}
                                 className="bg-forest-bg-2/50"
+                                ref={(ref) => { audioComponents.current.ocean = ref; }}
                               />
                             )}
                             {noise.value === 'pink' && (
@@ -284,6 +316,7 @@ export default function CustomizeSession() {
                                 isPlaying={true} 
                                 onPlayingChange={(playing) => !playing && setPreviewPlaying(null)}
                                 className="bg-forest-bg-2/50"
+                                ref={(ref) => { audioComponents.current.pink = ref; }}
                               />
                             )}
                             {noise.value === 'white' && (
@@ -291,6 +324,7 @@ export default function CustomizeSession() {
                                 isPlaying={true} 
                                 onPlayingChange={(playing) => !playing && setPreviewPlaying(null)}
                                 className="bg-forest-bg-2/50"
+                                ref={(ref) => { audioComponents.current.white = ref; }}
                               />
                             )}
                             {noise.value === 'brown' && (
@@ -298,6 +332,7 @@ export default function CustomizeSession() {
                                 isPlaying={true} 
                                 onPlayingChange={(playing) => !playing && setPreviewPlaying(null)}
                                 className="bg-forest-bg-2/50"
+                                ref={(ref) => { audioComponents.current.brown = ref; }}
                               />
                             )}
                           </div>

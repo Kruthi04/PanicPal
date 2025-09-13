@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface RainNoiseProps {
@@ -7,11 +7,11 @@ interface RainNoiseProps {
   className?: string;
 }
 
-const RainNoise: React.FC<RainNoiseProps> = ({ 
+const RainNoise = forwardRef<{ stopRain: () => void }, RainNoiseProps>(({ 
   isPlaying = false, 
   onPlayingChange,
   className = '' 
-}) => {
+}, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -54,28 +54,26 @@ const RainNoise: React.FC<RainNoiseProps> = ({
     return buffer;
   };
 
-  // Initialize audio context and rain sound
+  // Initialize audio context and generate rain sound
   const initializeAudio = async () => {
+    if (isInitialized) return;
+
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const audioContext = audioContextRef.current;
-      
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+      // Resume context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
+
+      // Generate rain sound buffer
+      rainBufferRef.current = generateRainSound(audioContextRef.current);
       
-      if (!rainBufferRef.current) {
-        rainBufferRef.current = generateRainSound(audioContext);
-      }
-      
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-        gainNodeRef.current.gain.value = isMuted ? 0 : volume;
-      }
+      // Create gain node for volume control
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
       
       setIsInitialized(true);
     } catch (error) {
@@ -83,20 +81,13 @@ const RainNoise: React.FC<RainNoiseProps> = ({
     }
   };
 
-  // Start playing rain sound
+  // Start rain sound
   const startRainSound = async () => {
     if (!isInitialized) {
       await initializeAudio();
     }
-    
-    if (audioContextRef.current && rainBufferRef.current && gainNodeRef.current) {
-      // Stop existing source if any
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-      }
-      
-      // Create new source
+
+    if (audioContextRef.current && rainBufferRef.current && gainNodeRef.current && !sourceNodeRef.current) {
       sourceNodeRef.current = audioContextRef.current.createBufferSource();
       sourceNodeRef.current.buffer = rainBufferRef.current;
       sourceNodeRef.current.loop = true;
@@ -114,17 +105,27 @@ const RainNoise: React.FC<RainNoiseProps> = ({
     }
   };
 
+  // Stop rain function for parent component
+  const stopRain = () => {
+    stopRainSound();
+    onPlayingChange?.(false);
+  };
+
   // Handle play/pause
   const togglePlayback = async () => {
     const newPlaying = !isPlaying;
     
-    if (newPlaying) {
-      await startRainSound();
-    } else {
-      stopRainSound();
+    try {
+      if (newPlaying) {
+        await startRainSound();
+      } else {
+        stopRainSound();
+      }
+      
+      onPlayingChange?.(newPlaying);
+    } catch (error) {
+      console.error('Error toggling rain sound:', error);
     }
-    
-    onPlayingChange?.(newPlaying);
   };
 
   // Handle mute/unmute
@@ -159,12 +160,19 @@ const RainNoise: React.FC<RainNoiseProps> = ({
     handlePlayback();
   }, [isPlaying, isInitialized]);
 
+  // Expose stop method to parent component
+  useImperativeHandle(ref, () => ({
+    stopRain
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopRainSound();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      stopRain();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors if context is already closed
+        });
       }
     };
   }, []);
@@ -215,6 +223,6 @@ const RainNoise: React.FC<RainNoiseProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default RainNoise;

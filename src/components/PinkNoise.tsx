@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface PinkNoiseProps {
@@ -7,11 +7,11 @@ interface PinkNoiseProps {
   className?: string;
 }
 
-const PinkNoise: React.FC<PinkNoiseProps> = ({ 
+const PinkNoise = forwardRef<{ stopPinkNoise: () => void }, PinkNoiseProps>(({ 
   isPlaying = false, 
   onPlayingChange,
   className = '' 
-}) => {
+}, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -50,30 +50,28 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
 
   // Initialize audio context and pink noise
   const initializeAudio = async () => {
+    if (isInitialized) return;
+
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const audioContext = audioContextRef.current;
-      
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+      // Resume context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
+
+      // Generate pink noise buffer
+      pinkNoiseBufferRef.current = generatePinkNoise(audioContextRef.current);
       
-      if (!pinkNoiseBufferRef.current) {
-        pinkNoiseBufferRef.current = generatePinkNoise(audioContext);
-      }
-      
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-        gainNodeRef.current.gain.value = isMuted ? 0 : volume;
-      }
+      // Create gain node for volume control
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
       
       setIsInitialized(true);
     } catch (error) {
-      console.error('Failed to initialize audio:', error);
+      console.error('Failed to initialize pink noise audio:', error);
     }
   };
 
@@ -82,15 +80,8 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
     if (!isInitialized) {
       await initializeAudio();
     }
-    
-    if (audioContextRef.current && pinkNoiseBufferRef.current && gainNodeRef.current) {
-      // Stop existing source if any
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-      }
-      
-      // Create new source
+
+    if (audioContextRef.current && pinkNoiseBufferRef.current && gainNodeRef.current && !sourceNodeRef.current) {
       sourceNodeRef.current = audioContextRef.current.createBufferSource();
       sourceNodeRef.current.buffer = pinkNoiseBufferRef.current;
       sourceNodeRef.current.loop = true;
@@ -100,12 +91,18 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
   };
 
   // Stop playing pink noise
-  const stopPinkNoise = () => {
+  const stopPinkNoiseSound = () => {
     if (sourceNodeRef.current) {
       sourceNodeRef.current.stop();
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+  };
+
+  // Stop pink noise function for parent component
+  const stopPinkNoise = () => {
+    stopPinkNoiseSound();
+    onPlayingChange?.(false);
   };
 
   // Handle play/pause
@@ -115,7 +112,7 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
     if (newPlaying) {
       await startPinkNoise();
     } else {
-      stopPinkNoise();
+      stopPinkNoiseSound();
     }
     
     onPlayingChange?.(newPlaying);
@@ -146,19 +143,26 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
       if (isPlaying) {
         await startPinkNoise();
       } else {
-        stopPinkNoise();
+        stopPinkNoiseSound();
       }
     };
     
     handlePlayback();
   }, [isPlaying, isInitialized]);
 
+  // Expose stop method to parent component
+  useImperativeHandle(ref, () => ({
+    stopPinkNoise
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopPinkNoise();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors if context is already closed
+        });
       }
     };
   }, []);
@@ -212,6 +216,6 @@ const PinkNoise: React.FC<PinkNoiseProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default PinkNoise;

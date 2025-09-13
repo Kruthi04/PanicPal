@@ -10,6 +10,7 @@ export interface IUser extends Document {
   verificationToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  lastLogin?: Date;
   preferences: {
     notifications: {
       email: boolean;
@@ -61,6 +62,9 @@ const userSchema = new Schema<IUser>({
     sparse: true
   },
   resetPasswordExpires: {
+    type: Date
+  },
+  lastLogin: {
     type: Date
   },
   preferences: {

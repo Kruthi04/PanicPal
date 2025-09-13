@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface BrownNoiseProps {
@@ -7,11 +7,11 @@ interface BrownNoiseProps {
   className?: string;
 }
 
-const BrownNoise: React.FC<BrownNoiseProps> = ({ 
+const BrownNoise = forwardRef<{ stopBrownNoise: () => void }, BrownNoiseProps>(({ 
   isPlaying = false, 
   onPlayingChange,
   className = '' 
-}) => {
+}, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -49,26 +49,24 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
 
   // Initialize audio context and brown noise
   const initializeAudio = async () => {
+    if (isInitialized) return;
+
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const audioContext = audioContextRef.current;
-      
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+      // Resume context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
+
+      // Generate brown noise buffer
+      brownNoiseBufferRef.current = generateBrownNoise(audioContextRef.current);
       
-      if (!brownNoiseBufferRef.current) {
-        brownNoiseBufferRef.current = generateBrownNoise(audioContext);
-      }
-      
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-        gainNodeRef.current.gain.value = isMuted ? 0 : volume;
-      }
+      // Create gain node for volume control
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
       
       setIsInitialized(true);
     } catch (error) {
@@ -81,15 +79,8 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
     if (!isInitialized) {
       await initializeAudio();
     }
-    
-    if (audioContextRef.current && brownNoiseBufferRef.current && gainNodeRef.current) {
-      // Stop existing source if any
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-      }
-      
-      // Create new source
+
+    if (audioContextRef.current && brownNoiseBufferRef.current && gainNodeRef.current && !sourceNodeRef.current) {
       sourceNodeRef.current = audioContextRef.current.createBufferSource();
       sourceNodeRef.current.buffer = brownNoiseBufferRef.current;
       sourceNodeRef.current.loop = true;
@@ -99,12 +90,18 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
   };
 
   // Stop playing brown noise
-  const stopBrownNoise = () => {
+  const stopBrownNoiseSound = () => {
     if (sourceNodeRef.current) {
       sourceNodeRef.current.stop();
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+  };
+
+  // Stop brown noise function for parent component
+  const stopBrownNoise = () => {
+    stopBrownNoiseSound();
+    onPlayingChange?.(false);
   };
 
   // Handle play/pause
@@ -114,7 +111,7 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
     if (newPlaying) {
       await startBrownNoise();
     } else {
-      stopBrownNoise();
+      stopBrownNoiseSound();
     }
     
     onPlayingChange?.(newPlaying);
@@ -145,19 +142,26 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
       if (isPlaying) {
         await startBrownNoise();
       } else {
-        stopBrownNoise();
+        stopBrownNoiseSound();
       }
     };
     
     handlePlayback();
   }, [isPlaying, isInitialized]);
 
+  // Expose stop method to parent component
+  useImperativeHandle(ref, () => ({
+    stopBrownNoise
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopBrownNoise();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors if context is already closed
+        });
       }
     };
   }, []);
@@ -208,6 +212,6 @@ const BrownNoise: React.FC<BrownNoiseProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default BrownNoise;

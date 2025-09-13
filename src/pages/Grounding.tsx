@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Ear, Hand, Coffee, Heart, ArrowRight, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 import PinkNoise from '../components/PinkNoise';
 
 interface GroundingStep {
@@ -63,6 +65,7 @@ const GROUNDING_STEPS: GroundingStep[] = [
 
 const Grounding: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<Record<string, string[]>>({});
   const [currentInput, setCurrentInput] = useState('');
@@ -192,7 +195,7 @@ const Grounding: React.FC = () => {
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-xl font-bold text-forest-text-primary">5-4-3-2-1 Grounding</h1>
-          <div className="w-6" /> {/* Spacer */}
+          {user ? <Navigation /> : <div className="w-6" />}
         </div>
 
         {/* Progress */}
