@@ -40,8 +40,8 @@ const Register: React.FC = () => {
         localStorage.setItem('token', response.data.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
         
-        // Redirect to dashboard or welcome page
-        navigate('/dashboard');
+        // Redirect to home page
+        navigate('/');
       }
     } catch (err: any) {
       if (err.response?.data?.errors) {

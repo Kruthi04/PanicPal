@@ -34,8 +34,8 @@ const Login: React.FC = () => {
         localStorage.setItem('token', response.data.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
         
-        // Redirect to dashboard or home
-        navigate('/dashboard');
+        // Redirect to home page
+        navigate('/');
       }
     } catch (err: any) {
       setError(

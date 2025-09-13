@@ -28,11 +28,11 @@ const Dashboard: React.FC = () => {
   ];
 
   const tools = [
-    { id: 'mood-journal', label: 'Mood Journal', icon: BookOpen, color: 'from-forest-sage to-forest-mint' },
-    { id: 'positive-notes', label: 'Positive Notes', icon: Heart, color: 'from-forest-mint to-forest-seafoam' },
-    { id: 'mood-booster', label: 'Mood Booster', icon: Smile, color: 'from-forest-seafoam to-forest-lime' },
-    { id: 'trigger-plan', label: 'Trigger Plan', icon: Shield, color: 'from-forest-lime to-forest-accent' },
-    { id: 'goal-trainer', label: 'Goal Trainer', icon: Target, color: 'from-forest-accent to-forest-sage' }
+    { id: 'mood-journal', label: 'Mood Journal', icon: BookOpen, color: 'from-forest-accent to-forest-accent' },
+    { id: 'positive-notes', label: 'Positive Notes', icon: Heart, color: 'from-forest-accent to-forest-accent' },
+    { id: 'mood-booster', label: 'Mood Booster', icon: Smile, color: 'from-forest-accent to-forest-accent' },
+    { id: 'trigger-plan', label: 'Trigger Plan', icon: Shield, color: 'from-forest-accent to-forest-accent' },
+    { id: 'goal-trainer', label: 'Goal Trainer', icon: Target, color: 'from-forest-accent to-forest-accent' }
   ];
 
   const relaxSounds = [
@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-forest-900 text-forest-100">
+    <div className="min-h-screen bg-forest-bg-1 text-forest-text-primary">
       <Navigation currentPage="dashboard" />
 
       {/* Main Content */}
@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
                 <h3 className="text-xl font-semibold text-forest-text-primary font-poppins">
                   🎵 Relax Sounds
                 </h3>
-                <button className="text-forest-accent hover:text-forest-seafoam transition-colors">
+                <button className="text-forest-accent hover:text-forest-accent transition-colors">
                   View All
                 </button>
               </div>
@@ -120,7 +120,7 @@ const Dashboard: React.FC = () => {
                 {relaxSounds.map((sound) => (
                   <div key={sound.id} className="flex items-center justify-between p-4 bg-forest-bg-2 rounded-xl hover:bg-forest-card transition-colors">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gradient-to-r from-forest-accent to-forest-seafoam rounded-full flex items-center justify-center mr-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-forest-accent to-forest-accent rounded-full flex items-center justify-center mr-4">
                         <Volume2 className="w-6 h-6 text-forest-bg-1" />
                       </div>
                       <div>
@@ -133,7 +133,7 @@ const Dashboard: React.FC = () => {
                         setCurrentTrack(sound);
                         setIsPlayerVisible(true);
                       }}
-                      className="p-2 bg-forest-accent rounded-full hover:bg-forest-seafoam transition-colors"
+                      className="p-2 bg-forest-accent rounded-full hover:bg-forest-accent transition-colors"
                     >
                       <Play className="w-4 h-4 text-forest-bg-1" />
                     </button>
