@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormData {
   email: string;
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
   
   const {
     register,
@@ -27,20 +28,10 @@ const Login: React.FC = () => {
     setError('');
     
     try {
-      const response = await axios.post('/api/auth/login', data);
-      
-      if (response.data.success) {
-        // Store token in localStorage
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
-        
-        // Redirect to home page
-        navigate('/');
-      }
+      await login(data.email, data.password);
+      navigate('/');
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Login failed. Please try again.'
-      );
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

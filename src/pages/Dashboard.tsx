@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Volume2, Heart, Brain, BookOpen, Smile, Target, Shield } from 'lucide-react';
 import AudioPlayer from '../components/AudioPlayer';
 import Navigation from '../components/Navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserData {
   id: string;
@@ -43,7 +44,7 @@ const Dashboard: React.FC = () => {
       duration: 900, // 15 minutes in seconds
       category: 'Nature',
       artwork: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=peaceful%20forest%20rain%20drops%20on%20leaves%20dark%20green%20nature%20zen%20circular%20artwork&image_size=square',
-      src: 'https://www.soundjay.com/misc/sounds/rain-01.wav' // placeholder
+      src: 'https://www.soundjay.com/misc/sounds/rain-01.wav' // Note: This is a placeholder URL that may not work
     },
     { 
       id: '2', 
@@ -52,7 +53,7 @@ const Dashboard: React.FC = () => {
       duration: 1200, // 20 minutes in seconds
       category: 'Water',
       artwork: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=calm%20ocean%20waves%20at%20night%20moonlight%20peaceful%20water%20zen%20circular%20artwork&image_size=square',
-      src: 'https://www.soundjay.com/misc/sounds/ocean-01.wav' // placeholder
+      src: 'https://www.soundjay.com/misc/sounds/ocean-01.wav' // Note: This is a placeholder URL that may not work
     },
     { 
       id: '3', 
@@ -61,7 +62,7 @@ const Dashboard: React.FC = () => {
       duration: 1800, // 30 minutes in seconds
       category: 'Nature',
       artwork: 'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=peaceful%20night%20crickets%20dark%20forest%20stars%20zen%20nature%20circular%20artwork&image_size=square',
-      src: 'https://www.soundjay.com/misc/sounds/crickets-01.wav' // placeholder
+      src: 'https://www.soundjay.com/misc/sounds/crickets-01.wav' // Note: This is a placeholder URL that may not work
     }
   ];
 
