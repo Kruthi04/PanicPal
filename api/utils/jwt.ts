@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/User.js';
 
@@ -17,7 +17,7 @@ export const generateToken = (userId: string, email: string): string => {
   const secret = process.env.JWT_SECRET || 'fallback-secret-key';
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn } as SignOptions);
 };
 
 // Verify JWT token

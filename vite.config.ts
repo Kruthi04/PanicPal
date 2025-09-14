@@ -24,7 +24,11 @@ export default defineConfig({
     }), 
     tsconfigPaths(),
   ],
+  preview: {
+    port: 5174
+  },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

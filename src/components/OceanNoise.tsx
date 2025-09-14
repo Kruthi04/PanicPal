@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface OceanNoiseProps {
@@ -7,11 +7,11 @@ interface OceanNoiseProps {
   className?: string;
 }
 
-const OceanNoise: React.FC<OceanNoiseProps> = ({ 
+const OceanNoise = forwardRef<{ stopOcean: () => void }, OceanNoiseProps>(({ 
   isPlaying = false, 
   onPlayingChange,
   className = '' 
-}) => {
+}, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -64,26 +64,24 @@ const OceanNoise: React.FC<OceanNoiseProps> = ({
 
   // Initialize audio context and ocean sound
   const initializeAudio = async () => {
+    if (isInitialized) return;
+
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const audioContext = audioContextRef.current;
-      
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+      // Resume context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
+
+      // Generate ocean sound buffer
+      oceanBufferRef.current = generateOceanSound(audioContextRef.current);
       
-      if (!oceanBufferRef.current) {
-        oceanBufferRef.current = generateOceanSound(audioContext);
-      }
-      
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-        gainNodeRef.current.gain.value = isMuted ? 0 : volume;
-      }
+      // Create gain node for volume control
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
       
       setIsInitialized(true);
     } catch (error) {
@@ -120,6 +118,12 @@ const OceanNoise: React.FC<OceanNoiseProps> = ({
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+  };
+
+  // Stop ocean function for parent component
+  const stopOcean = () => {
+    stopOceanSound();
+    onPlayingChange?.(false);
   };
 
   // Handle play/pause
@@ -167,12 +171,19 @@ const OceanNoise: React.FC<OceanNoiseProps> = ({
     handlePlayback();
   }, [isPlaying, isInitialized]);
 
+  // Expose stop method to parent component
+  useImperativeHandle(ref, () => ({
+    stopOcean
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopOceanSound();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      stopOcean();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors if context is already closed
+        });
       }
     };
   }, []);
@@ -223,6 +234,6 @@ const OceanNoise: React.FC<OceanNoiseProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default OceanNoise;

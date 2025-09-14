@@ -14,6 +14,7 @@ import Mindfulness from "@/pages/Mindfulness";
 import SleepStories from "@/pages/SleepStories";
 import GuidedMeditation from "@/pages/GuidedMeditation";
 import CustomizeSession from "@/pages/CustomizeSession";
+import Journal from "@/pages/Journal";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/sleep-stories" element={<SleepStories />} />
             <Route path="/guided-meditation" element={<GuidedMeditation />} />
             <Route path="/customize-session" element={<CustomizeSession />} />
+            <Route path="/journal" element={<Journal />} />
             <Route path="/other" element={<div className="text-center text-xl">Other Page - Coming Soon</div>} />
           </Routes>
         </Router>

@@ -19,6 +19,8 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, isVisible, onClose }) 
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
@@ -28,26 +30,53 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, isVisible, onClose }) 
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const handleEnded = () => setIsPlaying(false);
+    const handleError = () => {
+      setHasError(true);
+      setIsLoading(false);
+      setIsPlaying(false);
+      console.error('Audio failed to load:', track.src);
+    };
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setHasError(false);
+    };
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      setHasError(false);
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('loadstart', handleLoadStart);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('loadstart', handleLoadStart);
     };
-  }, []);
+  }, [track.src]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || hasError) return;
 
     if (isPlaying) {
       audio.pause();
+      setIsPlaying(false);
     } else {
-      audio.play();
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error('Failed to play audio:', error);
+        setHasError(true);
+        setIsPlaying(false);
+      }
     }
-    setIsPlaying(!isPlaying);
   };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -125,6 +154,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, isVisible, onClose }) 
             <div>
               <h4 className="text-forest-text-primary font-medium font-inter">{track.title}</h4>
               <p className="text-forest-text-secondary text-sm">{track.artist}</p>
+              {hasError && (
+                <p className="text-red-500 text-sm mt-2">
+                  Failed to load audio. Please check your internet connection or try a different track.
+                </p>
+              )}
             </div>
           </div>
 
@@ -136,9 +170,20 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ track, isVisible, onClose }) 
             
             <button 
               onClick={togglePlay}
-              className="p-3 bg-forest-accent hover:bg-forest-seafoam rounded-full transition-colors shadow-soft"
+              disabled={hasError || isLoading}
+              className={`p-3 rounded-full transition-colors shadow-soft ${
+                hasError || isLoading 
+                  ? 'bg-forest-text-secondary cursor-not-allowed' 
+                  : 'bg-forest-accent hover:bg-forest-seafoam'
+              }`}
             >
-              {isPlaying ? (
+              {isLoading ? (
+                <div className="w-6 h-6 border-2 border-forest-bg-1 border-t-transparent rounded-full animate-spin" />
+              ) : hasError ? (
+                <svg className="w-6 h-6 text-forest-bg-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              ) : isPlaying ? (
                 <Pause className="w-6 h-6 text-forest-bg-1" />
               ) : (
                 <Play className="w-6 h-6 text-forest-bg-1 ml-0.5" />

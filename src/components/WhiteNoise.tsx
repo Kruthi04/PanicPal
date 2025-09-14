@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface WhiteNoiseProps {
@@ -7,11 +7,11 @@ interface WhiteNoiseProps {
   className?: string;
 }
 
-const WhiteNoise: React.FC<WhiteNoiseProps> = ({ 
+const WhiteNoise = forwardRef<{ stopWhiteNoise: () => void }, WhiteNoiseProps>(({ 
   isPlaying = false, 
   onPlayingChange,
   className = '' 
-}) => {
+}, ref) => {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.3);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,26 +41,24 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
 
   // Initialize audio context and white noise
   const initializeAudio = async () => {
+    if (isInitialized) return;
+
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      // Create audio context
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const audioContext = audioContextRef.current;
-      
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+      // Resume context if suspended (required by some browsers)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
+
+      // Generate white noise buffer
+      whiteNoiseBufferRef.current = generateWhiteNoise(audioContextRef.current);
       
-      if (!whiteNoiseBufferRef.current) {
-        whiteNoiseBufferRef.current = generateWhiteNoise(audioContext);
-      }
-      
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-        gainNodeRef.current.gain.value = isMuted ? 0 : volume;
-      }
+      // Create gain node for volume control
+      gainNodeRef.current = audioContextRef.current.createGain();
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+      gainNodeRef.current.connect(audioContextRef.current.destination);
       
       setIsInitialized(true);
     } catch (error) {
@@ -73,15 +71,8 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
     if (!isInitialized) {
       await initializeAudio();
     }
-    
-    if (audioContextRef.current && whiteNoiseBufferRef.current && gainNodeRef.current) {
-      // Stop existing source if any
-      if (sourceNodeRef.current) {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-      }
-      
-      // Create new source
+
+    if (audioContextRef.current && whiteNoiseBufferRef.current && gainNodeRef.current && !sourceNodeRef.current) {
       sourceNodeRef.current = audioContextRef.current.createBufferSource();
       sourceNodeRef.current.buffer = whiteNoiseBufferRef.current;
       sourceNodeRef.current.loop = true;
@@ -91,12 +82,18 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
   };
 
   // Stop playing white noise
-  const stopWhiteNoise = () => {
+  const stopWhiteNoiseSound = () => {
     if (sourceNodeRef.current) {
       sourceNodeRef.current.stop();
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+  };
+
+  // Stop white noise function for parent component
+  const stopWhiteNoise = () => {
+    stopWhiteNoiseSound();
+    onPlayingChange?.(false);
   };
 
   // Handle play/pause
@@ -106,7 +103,7 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
     if (newPlaying) {
       await startWhiteNoise();
     } else {
-      stopWhiteNoise();
+      stopWhiteNoiseSound();
     }
     
     onPlayingChange?.(newPlaying);
@@ -137,19 +134,26 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
       if (isPlaying) {
         await startWhiteNoise();
       } else {
-        stopWhiteNoise();
+        stopWhiteNoiseSound();
       }
     };
     
     handlePlayback();
   }, [isPlaying, isInitialized]);
 
+  // Expose stop method to parent component
+  useImperativeHandle(ref, () => ({
+    stopWhiteNoise
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopWhiteNoise();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors if context is already closed
+        });
       }
     };
   }, []);
@@ -200,6 +204,6 @@ const WhiteNoise: React.FC<WhiteNoiseProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default WhiteNoise;
