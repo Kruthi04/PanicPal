@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Home, BookOpen, LogOut } from 'lucide-react';
+import { Menu, X, Home, BookOpen, LogOut, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ currentPage = 'dashboard', onNavigate }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const { logout } = useAuth();
+  const { user, isGuest, logout } = useAuth();
   const navigate = useNavigate();
 
   const toggleDrawer = () => {
@@ -33,11 +33,19 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage = 'dashboard', onNa
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/login');
+      if (user) {
+        await logout();
+      }
+      // After logout, user will be in guest mode, stay on current page
+      setIsDrawerOpen(false);
     } catch (error) {
       console.error('Logout failed:', error);
     }
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+    setIsDrawerOpen(false);
   };
 
   const menuItems = [
@@ -117,15 +125,25 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage = 'dashboard', onNa
           </nav>
         </div>
         
-        {/* Drawer Footer with Logout */}
+        {/* Drawer Footer with Auth Actions */}
         <div className="p-4 border-t border-forest-700">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-inter text-forest-300 hover:bg-forest-800/30 hover:text-forest-100"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-inter text-forest-300 hover:bg-forest-800/30 hover:text-forest-100"
+            >
+              <LogOut size={20} />
+              <span>Logout</span>
+            </button>
+          ) : isGuest ? (
+            <button
+              onClick={handleLogin}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-inter text-forest-300 hover:bg-forest-800/30 hover:text-forest-100"
+            >
+              <User size={20} />
+              <span>Sign In</span>
+            </button>
+          ) : null}
         </div>
       </div>
     </>

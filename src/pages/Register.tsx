@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Leaf, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterFormData {
   name: string;
@@ -15,9 +15,9 @@ interface RegisterFormData {
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { register: registerUser, loading } = useAuth();
   
   const {
     register,
@@ -29,32 +29,14 @@ const Register: React.FC = () => {
   const password = watch('password');
 
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
     setError('');
     
     try {
-      const response = await axios.post('/api/auth/register', data);
-      
-      if (response.data.success) {
-        // Store token in localStorage
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
-        
-        // Redirect to home page
-        navigate('/');
-      }
+      await registerUser(data.email, data.password, data.name);
+      // Redirect to home page on successful registration
+      navigate('/');
     } catch (err: any) {
-      if (err.response?.data?.errors) {
-        // Handle validation errors
-        const validationErrors = err.response.data.errors;
-        setError(validationErrors.map((e: any) => e.message).join(', '));
-      } else {
-        setError(
-          err.response?.data?.message || 'Registration failed. Please try again.'
-        );
-      }
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'Registration failed. Please try again.');
     }
   };
 
@@ -298,10 +280,10 @@ const Register: React.FC = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="forest-button w-full py-3 px-4 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-card"
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-forest-bg-1 mr-2"></div>
                   Creating account...

@@ -16,7 +16,7 @@ interface UserData {
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [selectedMood, setSelectedMood] = useState<string>('');
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [isPlayerVisible, setIsPlayerVisible] = useState(false);
@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
     }
   ];
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <div className="min-h-screen bg-forest-bg-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-forest-accent"></div>
@@ -83,10 +83,10 @@ const Dashboard: React.FC = () => {
         {/* Welcome Panel */}
         <div className="forest-card p-8 mb-8">
           <h2 className="text-3xl font-bold text-forest-text-primary mb-3 font-poppins">
-            Welcome back, {user.name.split(' ')[0]} 🌙
+            {user ? `Welcome back, ${user.name.split(' ')[0]} 🌙` : 'Welcome to your peaceful space 🌙'}
           </h2>
           <p className="text-forest-text-secondary mb-6 text-lg leading-relaxed">
-            How are you feeling tonight? Let's find your calm in the forest.
+            {user ? 'How are you feeling tonight? Let\'s find your calm in the forest.' : 'How are you feeling? Let\'s explore some calming tools together.'}
           </p>
           
           {/* Mood Chips */}

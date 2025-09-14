@@ -55,11 +55,49 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
       }
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
+    console.error('Registration error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      mongodbUri: process.env.MONGODB_URI ? 'SET' : 'NOT_SET',
+      jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT_SET',
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    // Handle duplicate email error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists'
+      });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
+    // Handle MongoDB connection errors
+    if (error.name === 'MongoNetworkError' || error.name === 'MongooseServerSelectionError') {
+      console.error('Database connection failed:', error.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Database connection failed. Please try again later.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Registration failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: process.env.NODE_ENV === 'development' 
+        ? `Registration failed: ${error.message}` 
+        : 'Registration failed. Please try again.',
+      ...(process.env.NODE_ENV === 'development' && { errorType: error.name })
     });
   }
 });

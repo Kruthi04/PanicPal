@@ -3,16 +3,40 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectDB = async (): Promise<void> => {
+export const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/panicpal';
+    console.log('Attempting MongoDB connection...', {
+      uri: process.env.MONGODB_URI ? 'SET' : 'NOT_SET',
+      nodeEnv: process.env.NODE_ENV
+    });
     
-    await mongoose.connect(mongoURI);
+    const conn = await mongoose.connect(process.env.MONGODB_URI!, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000
+    });
     
-    console.log('MongoDB connected successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error: any) {
+    console.error('MongoDB connection error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      mongodbUri: process.env.MONGODB_URI ? 'SET' : 'NOT_SET',
+      nodeEnv: process.env.NODE_ENV,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    
+    if (process.env.NODE_ENV === 'production') {
+      // In production, retry connection after delay
+      setTimeout(() => {
+        console.log('Retrying MongoDB connection...');
+        connectDB();
+      }, 5000);
+    } else {
+      // In development, exit process
+      process.exit(1);
+    }
   }
 };
 

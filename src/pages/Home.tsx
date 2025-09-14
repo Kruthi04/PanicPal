@@ -4,21 +4,21 @@ import { useAuth } from "../contexts/AuthContext";
 import Navigation from "../components/Navigation";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, isGuest, continueAsGuest } = useAuth();
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
-    if (!user) {
-      navigate('/login');
-      return;
+    // Allow navigation for both authenticated users and guests
+    if (!user && !isGuest) {
+      continueAsGuest();
     }
     navigate(path);
   };
 
   const handlePanicButton = () => {
-    if (!user) {
-      navigate('/login');
-      return;
+    // Allow panic button for both authenticated users and guests
+    if (!user && !isGuest) {
+      continueAsGuest();
     }
     navigate('/breathing-session?rescue=true');
   };
@@ -36,24 +36,32 @@ export default function Home() {
               <h1 className="text-xl font-bold text-forest-text-primary font-poppins">PanicPal</h1>
             </div>
             
-            {user ? (
-              <Navigation />
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/login" 
-                  className="text-forest-text-secondary hover:text-forest-text-primary font-medium transition-colors font-inter"
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="forest-button font-inter"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
+            <div className="flex items-center space-x-4">
+              {user || isGuest ? (
+                <Navigation />
+              ) : (
+                <>
+                  <button
+                    onClick={continueAsGuest}
+                    className="text-forest-text-secondary hover:text-forest-text-primary font-medium transition-colors font-inter"
+                  >
+                    Continue as Guest
+                  </button>
+                  <Link 
+                    to="/login" 
+                    className="text-forest-text-secondary hover:text-forest-text-primary font-medium transition-colors font-inter"
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="forest-button font-inter"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -78,21 +86,35 @@ export default function Home() {
               <p className="text-xl md:text-2xl text-forest-text-secondary mb-8 max-w-2xl mx-auto font-inter leading-relaxed">
                 Your personal mental health companion. Find peace, manage anxiety, and build resilience with our comprehensive wellness tools.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <Link 
-                  to="/register"
-                  className="forest-button font-inter font-semibold py-3 px-8 shadow-card"
-                >
-                  Start Your Journey
-                </Link>
-                <Link 
-                  to="/login" 
-                  className="bg-forest-bg-2/50 hover:bg-forest-card/50 text-forest-text-primary font-semibold py-3 px-8 rounded-2xl border-2 border-forest-bg-2 transition-colors backdrop-blur-sm font-inter"
-                >
-                  Sign In
-                </Link>
-
-              </div>
+              {!isGuest && (
+                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                  <button
+                    onClick={continueAsGuest}
+                    className="forest-button font-inter font-semibold py-3 px-8 shadow-card"
+                  >
+                    Try Without Account
+                  </button>
+                  <Link 
+                    to="/register"
+                    className="bg-forest-bg-2/50 hover:bg-forest-card/50 text-forest-text-primary font-semibold py-3 px-8 rounded-2xl border-2 border-forest-bg-2 transition-colors backdrop-blur-sm font-inter"
+                  >
+                    Create Account
+                  </Link>
+                  <Link 
+                    to="/login" 
+                    className="bg-forest-bg-2/50 hover:bg-forest-card/50 text-forest-text-primary font-semibold py-3 px-8 rounded-2xl border-2 border-forest-bg-2 transition-colors backdrop-blur-sm font-inter"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              )}
+              {isGuest && (
+                <div className="mb-8 p-4 bg-forest-card/50 rounded-2xl border border-forest-bg-2 max-w-2xl mx-auto">
+                  <p className="text-forest-text-secondary font-inter text-center">
+                    You're using PanicPal as a guest. <Link to="/register" className="text-forest-accent hover:text-forest-mint font-medium">Create an account</Link> to save your progress and access personalized features.
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
